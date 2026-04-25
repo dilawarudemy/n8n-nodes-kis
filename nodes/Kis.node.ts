@@ -49,7 +49,7 @@ export class Kis implements INodeType {
 				default: 'data',
 			},
 
-			// OPERATIONS  ...
+			// OPERATIONS  ....
 			{
 				displayName: 'Operation',
 				name: 'operation',
