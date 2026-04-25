@@ -41,6 +41,10 @@ class KisGetDataTrigger {
                     name: 'limit',
                     type: 'number',
                     default: 25,
+                    typeOptions: {
+                        minValue: 1,
+                        maxValue: 200,
+                    },
                     description: 'Maximum documents fetched per poll',
                 },
             ],
@@ -56,12 +60,14 @@ class KisGetDataTrigger {
     async poll() {
         var _a, _b, _c;
         const webhookData = this.getWorkflowStaticData('node');
-        const creds = (await this.getCredentials('kisApi'));
-        const auth = await GenericFunctions_1.kisGetAuthorization.call(this);
         const collection = this.getNodeParameter('collection');
         const limit = this.getNodeParameter('limit');
         const now = new Date().toISOString();
-        const startDate = webhookData.lastTimeChecked || now;
+        let startDate = webhookData.lastTimeChecked;
+        if (!startDate) {
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            startDate = oneDayAgo.toISOString();
+        }
         const filters = [
             {
                 filter_column: 'c_at',
@@ -70,14 +76,9 @@ class KisGetDataTrigger {
             },
         ];
         try {
-            const response = await this.helpers.httpRequest({
+            const response = await GenericFunctions_1.kisApiRequest.call(this, {
                 method: 'POST',
-                url: `${creds.baseUrl}/api_token_access/data_handlers/index`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    Authorization: auth,
-                },
+                url: '/api_token_access/data_handlers/index',
                 body: {
                     data_handler: {
                         collection_name: collection,
@@ -85,7 +86,6 @@ class KisGetDataTrigger {
                         filters,
                     },
                 },
-                json: true,
             });
             const docs = (_c = (_b = (_a = response === null || response === void 0 ? void 0 : response.queries) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.documents) !== null && _c !== void 0 ? _c : [];
             if (!Array.isArray(docs) || docs.length === 0) {
@@ -100,7 +100,6 @@ class KisGetDataTrigger {
                     id,
                 };
             });
-            // Determine newest timestamp from response
             let newestTimestamp = startDate;
             for (const doc of items) {
                 if (!doc.c_at)
@@ -109,7 +108,6 @@ class KisGetDataTrigger {
                     newestTimestamp = doc.c_at;
                 }
             }
-            // Update cursor
             webhookData.lastTimeChecked = newestTimestamp;
             return [this.helpers.returnJsonArray(items)];
         }

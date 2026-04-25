@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-kis",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "n8n community node for KIS (https://kis.work)",
   "license": "MIT",
   "keywords": [
@@ -44,11 +44,7 @@
       "dist/credentials/KisApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/KisCreateData.node.js",
-      "dist/nodes/KisUpdateData.node.js",
-      "dist/nodes/KisDeleteData.node.js",
-      "dist/nodes/KisSearchData.node.js",
-      "dist/nodes/KisGetAllCollections.node.js",
+      "dist/nodes/Kis.node.js",
       "dist/nodes/KisGetDataTrigger.node.js"
     ]
   },
