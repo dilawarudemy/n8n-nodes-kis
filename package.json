@@ -1,0 +1,55 @@
+{
+  "name": "n8n-nodes-kis",
+  "version": "0.1.9",
+  "description": "n8n community node for KIS (https://kis.work)",
+  "license": "MIT",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n-community-node",
+    "kis",
+    "getkis"
+  ],
+  "author": {
+    "name": "KIS",
+    "email": "joachim@getkis.io",
+    "url": "https://github.com/dilawarudemy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dilawarudemy/n8n-nodes-kis.git"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc && copyfiles -u 1 \"nodes/**/*.svg\" dist/nodes",
+    "dev": "tsc -w",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1",
+    "n8n-node-dev": "^1.2.0",
+    "rimraf": "^6.1.2",
+    "typescript": "^5.4.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/KisApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Kis.node.js",
+      "dist/nodes/KisGetDataTrigger.node.js"
+    ]
+  },
+  "homepage": "https://github.com/dilawarudemy/n8n-nodes-kis#readme",
+  "bugs": {
+    "url": "https://github.com/dilawarudemy/n8n-nodes-kis/issues"
+  }
+}
