@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-kis",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "n8n community node for KIS (https://kis.work)",
   "license": "MIT",
   "keywords": [
