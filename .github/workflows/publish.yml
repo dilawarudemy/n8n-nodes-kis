@@ -10,7 +10,7 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write   # REQUIRED for provenance
+      id-token: write
 
     steps:
       - name: Checkout
@@ -19,13 +19,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Check npm version
+        run: npm -v
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build package
-        run: npm run build
-
-      - name: Publish to npm with provenance
-        run: npm publish --access public --provenance
+      - name: Publish to npm
+        run: npm publish --access public
