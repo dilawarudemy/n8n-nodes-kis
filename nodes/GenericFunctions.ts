@@ -3,11 +3,9 @@ import type {
 	ILoadOptionsFunctions,
 	IHookFunctions,
 	IPollFunctions,
-	ITriggerFunctions,
 	INodePropertyOptions,
 	IDataObject,
 } from 'n8n-workflow';
-import { NodeApiError } from 'n8n-workflow';
 
 /**
  * KIS credentials shape used by this package.
@@ -19,53 +17,17 @@ export type KisCreds = {
 };
 
 /**
- * KIS returns a short-lived Authorization token from sign_in.
- * n8n's generic credential authentication cannot derive that dynamic header
- * from the saved app token/secret alone, so requests authenticate explicitly.
- */
-export async function kisGetAuthorization(
-	this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions | IPollFunctions | ITriggerFunctions,
-): Promise<string> {
-	const credentials = (await this.getCredentials('kisApi')) as KisCreds;
-	const baseUrl = (credentials.baseUrl || '').replace(/\/+$/, '');
-
-	if (!baseUrl) {
-		throw new NodeApiError(this.getNode(), { message: 'Missing Base URL in KIS credentials.' } as any);
-	}
-
-	const fullResponse = await this.helpers.httpRequest({
-		method: 'POST',
-		url: `${baseUrl}/api_access_auth/sign_in`,
-		headers: {
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-		},
-		body: {
-			app_token: credentials.appToken,
-			secret: credentials.secret,
-		},
-		json: true,
-		returnFullResponse: true,
-	});
-
-	const headers = (fullResponse as any)?.headers ?? {};
-	const authorization =
-		headers.authorization ||
-		headers.Authorization ||
-		(fullResponse as any)?.body?.authorization ||
-		(fullResponse as any)?.body?.Authorization;
-
-	if (!authorization || typeof authorization !== 'string') {
-		throw new NodeApiError(this.getNode(), fullResponse as any, {
-			message: 'Authorization missing from KIS sign_in response.',
-		});
-	}
-
-	return authorization;
-}
-
-/**
  * Shared KIS API request helper.
+ *
+ * IMPORTANT:
+ * - Uses n8n's official httpRequestWithAuthentication helper.
+ * - Does not call this.helpers.httpRequest().
+ * - Does not manually get/sign an Authorization token.
+ * - Do not manually add Authorization headers in node files.
+ * - Pass relative URLs only, for example:
+ *   url: '/api_token_access/data_handlers/index'
+ *
+ * Authentication must be configured in credentials/KisApi.credentials.ts.
  */
 export async function kisApiRequest(
 	this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions | IPollFunctions,
@@ -80,24 +42,15 @@ export async function kisApiRequest(
 		ignoreHttpStatusErrors?: boolean;
 	},
 ): Promise<any> {
-	const credentials = (await this.getCredentials('kisApi')) as KisCreds;
-	const authorization = await kisGetAuthorization.call(this);
-
-	const baseUrl = (credentials.baseUrl || '').replace(/\/+$/, '');
-	const url = options.url.startsWith('http')
-		? options.url
-		: `${baseUrl}${options.url.startsWith('/') ? options.url : `/${options.url}`}`;
-
-	return await this.helpers.httpRequest({
+	return await this.helpers.httpRequestWithAuthentication.call(this, 'kisApi', {
 		method: options.method,
-		url,
+		url: options.url,
 		body: options.body,
 		qs: options.qs,
 		headers: {
 			'Content-Type': 'application/json',
 			Accept: 'application/json',
 			...options.headers,
-			Authorization: authorization,
 		},
 		json: options.json ?? true,
 		returnFullResponse: options.returnFullResponse,

@@ -1,4 +1,4 @@
-import type { IExecuteFunctions, ILoadOptionsFunctions, IHookFunctions, IPollFunctions, ITriggerFunctions, INodePropertyOptions, IDataObject } from 'n8n-workflow';
+import type { IExecuteFunctions, ILoadOptionsFunctions, IHookFunctions, IPollFunctions, INodePropertyOptions, IDataObject } from 'n8n-workflow';
 /**
  * KIS credentials shape used by this package.
  */
@@ -8,13 +8,17 @@ export type KisCreds = {
     secret: string;
 };
 /**
- * KIS returns a short-lived Authorization token from sign_in.
- * n8n's generic credential authentication cannot derive that dynamic header
- * from the saved app token/secret alone, so requests authenticate explicitly.
- */
-export declare function kisGetAuthorization(this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions | IPollFunctions | ITriggerFunctions): Promise<string>;
-/**
  * Shared KIS API request helper.
+ *
+ * IMPORTANT:
+ * - Uses n8n's official httpRequestWithAuthentication helper.
+ * - Does not call this.helpers.httpRequest().
+ * - Does not manually get/sign an Authorization token.
+ * - Do not manually add Authorization headers in node files.
+ * - Pass relative URLs only, for example:
+ *   url: '/api_token_access/data_handlers/index'
+ *
+ * Authentication must be configured in credentials/KisApi.credentials.ts.
  */
 export declare function kisApiRequest(this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions | IPollFunctions, options: {
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';

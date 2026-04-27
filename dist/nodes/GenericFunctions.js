@@ -1,71 +1,34 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.kisGetAuthorization = kisGetAuthorization;
 exports.kisApiRequest = kisApiRequest;
 exports.loadCollections = loadCollections;
 exports.loadDocumentIds = loadDocumentIds;
 exports.loadCollectionFields = loadCollectionFields;
 exports.getFieldsFromParameters = getFieldsFromParameters;
-const n8n_workflow_1 = require("n8n-workflow");
-/**
- * KIS returns a short-lived Authorization token from sign_in.
- * n8n's generic credential authentication cannot derive that dynamic header
- * from the saved app token/secret alone, so requests authenticate explicitly.
- */
-async function kisGetAuthorization() {
-    var _a, _b, _c;
-    const credentials = (await this.getCredentials('kisApi'));
-    const baseUrl = (credentials.baseUrl || '').replace(/\/+$/, '');
-    if (!baseUrl) {
-        throw new n8n_workflow_1.NodeApiError(this.getNode(), { message: 'Missing Base URL in KIS credentials.' });
-    }
-    const fullResponse = await this.helpers.httpRequest({
-        method: 'POST',
-        url: `${baseUrl}/api_access_auth/sign_in`,
-        headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-        },
-        body: {
-            app_token: credentials.appToken,
-            secret: credentials.secret,
-        },
-        json: true,
-        returnFullResponse: true,
-    });
-    const headers = (_a = fullResponse === null || fullResponse === void 0 ? void 0 : fullResponse.headers) !== null && _a !== void 0 ? _a : {};
-    const authorization = headers.authorization ||
-        headers.Authorization ||
-        ((_b = fullResponse === null || fullResponse === void 0 ? void 0 : fullResponse.body) === null || _b === void 0 ? void 0 : _b.authorization) ||
-        ((_c = fullResponse === null || fullResponse === void 0 ? void 0 : fullResponse.body) === null || _c === void 0 ? void 0 : _c.Authorization);
-    if (!authorization || typeof authorization !== 'string') {
-        throw new n8n_workflow_1.NodeApiError(this.getNode(), fullResponse, {
-            message: 'Authorization missing from KIS sign_in response.',
-        });
-    }
-    return authorization;
-}
 /**
  * Shared KIS API request helper.
+ *
+ * IMPORTANT:
+ * - Uses n8n's official httpRequestWithAuthentication helper.
+ * - Does not call this.helpers.httpRequest().
+ * - Does not manually get/sign an Authorization token.
+ * - Do not manually add Authorization headers in node files.
+ * - Pass relative URLs only, for example:
+ *   url: '/api_token_access/data_handlers/index'
+ *
+ * Authentication must be configured in credentials/KisApi.credentials.ts.
  */
 async function kisApiRequest(options) {
     var _a;
-    const credentials = (await this.getCredentials('kisApi'));
-    const authorization = await kisGetAuthorization.call(this);
-    const baseUrl = (credentials.baseUrl || '').replace(/\/+$/, '');
-    const url = options.url.startsWith('http')
-        ? options.url
-        : `${baseUrl}${options.url.startsWith('/') ? options.url : `/${options.url}`}`;
-    return await this.helpers.httpRequest({
+    return await this.helpers.httpRequestWithAuthentication.call(this, 'kisApi', {
         method: options.method,
-        url,
+        url: options.url,
         body: options.body,
         qs: options.qs,
         headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
             ...options.headers,
-            Authorization: authorization,
         },
         json: (_a = options.json) !== null && _a !== void 0 ? _a : true,
         returnFullResponse: options.returnFullResponse,
